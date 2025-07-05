@@ -1,0 +1,32 @@
+import re
+from pathlib import Path
+
+class MarkdownConverter:
+    def __init__(self, input_path):
+        self.input_path = Path(input_path)
+        self.output_path = self.input_path.with_suffix('.html')
+        self.lines = self.input_path.read_text(encoding='utf-8').splitlines()
+
+    def convert_line(self, line):
+        if line.startswith('#'):
+            level = len(line) - len(line.lstrip('#'))
+            return f"<h{level}>{line[level+1:].strip()}</h{level}>"
+        line = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', line)
+        line = re.sub(r'\*(.+?)\*', r'<em>\1</em>', line)
+        return f"<p>{line}</p>"
+
+    def convert(self):
+        html_lines = ['<html><body>']
+        for line in self.lines:
+            if line.strip():
+                html_lines.append(self.convert_line(line))
+        html_lines.append('</body></html>')
+        self.output_path.write_text('\n'.join(html_lines), encoding='utf-8')
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) != 2:
+        print("Usage: python md2html.py <file.md>")
+        sys.exit(1)
+    converter = MarkdownConverter(sys.argv[1])
+    converter.convert()
